@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meu Game</title>
+    <style type="text/css"></style>
+</head>
+<body>
+    <canvas id="tela">
+        <script>
+            const canvas = document.querySelector('canvas')
+            const c = canvas.getContext('2d')
+            canvas.width = window.innerWidth
+            canvas.height = window.innerHeight
+
+            class Nave {            //declaracao da posicao, velocidade e rotação base da nave
+                constructor({posicao, velocidade}){
+                    this.posicao = posicao
+                    this.velocidade = velocidade
+                    this.rotation = 0   
+                }
+                desenhar() {
+                    c.save()
+                    c.translate(this.posicao.x, this.posicao.y)  //para o canvas em si não girar, apenas a nave
+                    c.rotate(this.rotation)
+                    c.translate(-this.posicao.x, -this.posicao.y)
+                    c.beginPath()
+                    c.arc(this.posicao.x, this.posicao.y, 5, 0, Math.PI * 2, false)  //setando uma rotação 360 graus
+                    c.fillStyle = 'red' //cor da nave
+                    c.fill()
+                    c.closePath()
+                    //c.fillStyle = 'red'
+                    //c.fillRect (this.posicao.x, this.posicao.y, 100, 100)
+                    c.beginPath()
+                    c.moveTo(this.posicao.x + 30, this.posicao.y)       //desenho do topo do triangulo
+                    c.lineTo(this.posicao.x - 10, this.posicao.y - 10) //desenho da parte esquerda do triangulo 
+                    c.lineTo(this.posicao.x - 10, this.posicao.y + 10) // desenho da parte direita do triangulo
+                    c.closePath()
+                    c.strokeStyle = 'white' //as bordas da nave
+                    c.stroke()
+                    c.restore()
+                }
+                update() {
+                    this.desenhar()     //fará sempre um desenho novo ao voar
+                    this.posicao.x += this.velocidade.x 
+                    this.posicao.y += this.velocidade.y
+                }
+                pegarVertices() {
+                    const cos = Math.cos(this.rotation)
+                    const sin = Math.sin(this.rotation)
+
+                    return [
+                    {
+                        x: this.posicao.x + cos * 30 - sin * 0,
+                        y: this.posicao.y + sin * 30 + cos * 0,
+                    },
+                    {
+                        x: this.posicao.x + cos * -10 - sin * 10,
+                        y: this.posicao.y + sin * -10 + cos * 10,
+                    },
+                    {
+                        x: this.posicao.x + cos * -10 - sin * -10,
+                        y: this.posicao.y + sin * -10 + cos * -10,
+                    },
+                    ]
+                }
+            }
+            class Projetil {
+                constructor({posicao, velocidade}){
+                    this.posicao = posicao
+                    this.velocidade = velocidade
+                    this.radius = 5
+                }
+                desenhar(){
+                    c.beginPath()
+                    c.arc(this.posicao.x, this.posicao.y, this.radius, 0, Math.PI * 2, false)
+                    c.closePath()
+                    c.fillStyle = 'white'
+                    c.fill()
+                }
+                update(){
+                    this.desenhar()
+                    this.posicao.x += this.velocidade.x
+                    this.posicao.y += this.velocidade.y
+                }
+            }
+            class Asteroide {
+                constructor({posicao, velocidade, radius}){
+                    this.posicao = posicao
+                    this.velocidade = velocidade
+                    this.radius = radius
+                }
+                desenhar(){
+                    c.beginPath()
+                    c.arc(this.posicao.x, this.posicao.y, this.radius, 0, Math.PI * 2, false)
+                    c.closePath()
+                    c.strokeStyle = 'white'
+                    c.stroke()
+                }
+                update(){
+                    this.desenhar()
+                    this.posicao.x += this.velocidade.x
+                    this.posicao.y += this.velocidade.y
+                }
+            }
+            const nave = new Nave({
+                posicao: {x: canvas.width / 2, y: canvas.height / 2 }, //posição inicial da nave
+                velocidade: {x: 0, y: 0}, //velocidade inicial da nave
+            })
+
+
+            const tecla = {
+                w: {
+                    pressed: false,
+                },
+                a: {
+                    pressed: false,
+                },
+                d: {
+                    pressed: false,
+                },
+            }
+            const speed = 3     //velocidade 
+            const rotation_speed = 0.05 //velocidade de rotação
+            const friccao = 0.97 //velocidade de "fricção"
+            const velocidade_Projetil = 3
+
+            const projeteis = []
+            const asteroides = []
+
+            const idIntervalo = window.setInterval(() =>{
+                const index = Math.floor(Math.random() * 4)
+                let x, y
+                let vx, vy
+                let radius = 50 * Math.random() + 10
+                switch(index){
+                    case 0:  //esquerda da tela
+                        x = 0 - radius
+                        y = Math.random() * canvas.height
+                        vx = 1
+                        vy = 0
+                        break
+                    case 1:  //embaixo da tela
+                        x = Math.random() * canvas.width
+                        y = canvas.height + radius
+                        vx = 0
+                        vy = -1
+                        break
+                    case 2:  //direita da tela
+                        x = canvas.width + radius
+                        y = Math.random * canvas.height
+                        vx = -1
+                        vy = 0
+                        break
+                    case 3: // topo da tela
+                        x = Math.random() * canvas.width
+                        y = 0 - radius
+                        vx = 0
+                        vy = 1
+                        break
+                }
+                asteroides.push(
+                    new Asteroide({
+                        posicao: {
+                            x: x,
+                            y: y,
+                        },
+                        velocidade: {
+                            x: vx,
+                            y: vy,
+                        },
+                        radius,
+                    })
+                )
+            }, 3000) 
+
+            function colisaoCirculo(circulo1, circulo2){
+                const xDiferenca = circulo2.posicao.x - circulo1.posicao.x
+                const yDiferenca = circulo2.posicao.y - circulo1.posicao.y
+                const distancia = Math.sqrt(xDiferenca * xDiferenca + yDiferenca * yDiferenca)
+                if (distancia <= circulo1.radius + circulo2.radius){
+                    return true
+                }
+                return false
+
+            }
+
+            function colisaoCirculoTriangulo(circulo, triangulo) {
+            // Check if the circle is colliding with any of the triangle's edges
+                for (let i = 0; i < 3; i++) {
+                    let start = triangulo[i]
+                    let end = triangulo[(i + 1) % 3]
+
+                    let dx = end.x - start.x
+                    let dy = end.y - start.y
+                    let length = Math.sqrt(dx * dx + dy * dy)
+                    let dot =
+                    ((circulo.posicao.x - start.x) * dx +
+                        (circulo.posicao.y - start.y) * dy) /
+                    Math.pow(length, 2)
+
+                    let closestX = start.x + dot * dx
+                    let closestY = start.y + dot * dy
+
+                    if (!ePontoDeSegmento(closestX, closestY, start, end)) {
+                    closestX = closestX < start.x ? start.x : end.x
+                    closestY = closestY < start.y ? start.y : end.y
+                    }
+
+                    dx = closestX - circulo.posicao.x
+                    dy = closestY - circulo.posicao.y
+
+                    let distancia = Math.sqrt(dx * dx + dy * dy)
+                    if (distancia <= circulo.radius) {
+                    return true
+                    }
+            }
+
+            // No collision
+            return false
+            }
+            function ePontoDeSegmento(x, y, start, end) {
+            return (
+                x >= Math.min(start.x, end.x) &&
+                x <= Math.max(start.x, end.x) &&
+                y >= Math.min(start.y, end.y) &&
+                y <= Math.max(start.y, end.y)
+            )
+            }
+
+            function animacao(){
+                const idAnimacao = window.requestAnimationFrame(animacao)
+                c.fillStyle = "black"
+                c.fillRect(0, 0, canvas.width, canvas.height)
+                nave.update()
+
+                for (let i = projeteis.length - 1; i >= 0; i--){
+                    const projetil = projeteis [i]
+                    projetil.update()
+                    //apagar todos os projéteis que sairem da tela
+                    if (projetil.posicao.x + projetil.radius < 0 ||
+                        projetil.posicao.x - projetil.radius > canvas.width ||
+                        projetil.posicao.y - projetil.radius > canvas.height ||
+                        projetil.posicao.y + projetil.radius < 0
+                    ){
+                        projeteis.splice(i, 1)
+                    }
+                }
+                //asteroide lixo
+                for (let i = asteroides.length - 1; i >= 0; i--){
+                    const asteroide = asteroides [i]
+                    asteroide.update()
+                    if(colisaoCirculoTriangulo(asteroide, nave.pegarVertices())){
+                        window.cancelAnimationFrame(idAnimacao)
+                        clearInterval(idIntervalo)
+                    }
+
+                    //
+                    if (
+                        asteroide.posicao.x + asteroide.radius < 0 ||
+                        asteroide.posicao.x - asteroide.radius > canvas.width ||
+                        asteroide.posicao.y - asteroide.radius > canvas.height ||
+                        asteroide.posicao.y + asteroide.radius < 0
+                    ) {
+                        asteroides.splice(i, 1)
+                    }
+                    //projeteis
+                    for (let j = projeteis.length - 1; j >= 0; j--){
+                        const projetil = projeteis [j]
+                        if (colisaoCirculo(asteroide, projetil)){
+                            asteroides.splice(i, 1)
+                            projeteis.splice(j, 1)
+                        }
+                    }
+                    
+                }
+
+                
+                if (tecla.w.pressed) {
+                    nave.velocidade.x = Math.cos(nave.rotation) * speed // velocidade de rotação horizontal
+                    nave.velocidade.y = Math.sin(nave.rotation) * speed // velocidade de rotação vertical
+                } else if(!tecla.w.pressed){
+                    nave.velocidade.x *= friccao
+                    nave.velocidade.y *= friccao
+                }
+                if (tecla.d.pressed) nave.rotation += rotation_speed //rotação da nave para direita
+
+                else if (tecla.a.pressed) nave.rotation -= rotation_speed // rotação da nave para esquerda
+            }
+            animacao()
+            window.addEventListener('keydown', (event) => {
+                switch (event.code){
+                    case 'KeyW':
+                        tecla.w.pressed = true
+                        break
+                    case 'KeyA':
+                        tecla.a.pressed = true
+                        break
+                    case 'KeyD':
+                        tecla.d.pressed = true
+                        break
+                    case 'Space':
+                        projeteis.push(
+                            new Projetil({
+                                posicao: {
+                                    x: nave.posicao.x + Math.cos(nave.rotation) * 30, //de onde os projeteis saem
+                                    y: nave.posicao.y + Math.sin(nave.rotation) * 30,
+                                    },
+                                velocidade:{
+                                    x: Math.cos(nave.rotation) * velocidade_Projetil, //velocidade dos projeteis
+                                    y: Math.sin(nave.rotation) * velocidade_Projetil,
+                                    }
+                            }))
+                        break
+                }
+            }) 
+            window.addEventListener('keyup', (event) => {
+                switch (event.code){
+                    case 'KeyW':
+                        tecla.w.pressed = false
+                        break
+                    case 'KeyA':
+                        tecla.a.pressed = false
+                        break
+                    case 'KeyD':
+                        tecla.d.pressed = false
+                        break
+                }
+            })
+        </script>
+    </canvas>
+</body>
+</html>
