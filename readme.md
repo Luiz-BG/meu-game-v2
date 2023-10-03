@@ -16,7 +16,7 @@ Um projeto de jogo com inspiração no famoso videogame [Asteroids](https://pt.w
 - [x] Game over 
 
 ## Layout
-![tela inicial do projeto](./imagens/imagem_do_game.png)
+![tela inicial do projeto](imagens/imagem_do_game.png)
 
 ## 🚀Tecnologias Utilizadas
 1. HTML
