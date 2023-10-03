@@ -4,9 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Meu Game</title>
-    <style type="text/css"></style>
 </head>
 <body>
+    <audio src="musicaTema.mp3"></audio>
     <canvas id="tela">
         <script>
             const canvas = document.querySelector('canvas')
@@ -328,6 +328,11 @@
                         break
                 }
             })
+            window.addEventListener("DOMContentLoaded", event => {
+                const audio = document.querySelector("audio");
+                audio.volume = 0.2;
+                audio.play();
+                });
         </script>
     </canvas>
 </body>
